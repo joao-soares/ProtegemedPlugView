@@ -5,15 +5,12 @@
  */
 package protegemed.services;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,28 +22,19 @@ public class ProtegemedConnection {
 
     private static Connection connect() {
 
-        Properties prop = new Properties();
-        InputStream input;
         Connection conn;
 
-        //Default values
-        String host = "10.8.0.1";
-        String database = "protegemed";
-        String username = "root";
-        String password = "senha.123";
+        String host;
+        String database;
+        String username;
+        String password;
+        
+        ProtegemedPropertyLoad property = new ProtegemedPropertyLoad("resources/config.properties");
 
-        try {
-            input = new FileInputStream("resources/config.properties");
-            prop.load(input);
-
-            host = prop.getProperty("host");
-            database = prop.getProperty("database");
-            username = prop.getProperty("username");
-            password = prop.getProperty("password");
-
-        } catch (IOException e) {
-            System.out.println("Properties file not found. Continue with default values...");
-        }
+        host = property.getHost();
+        database = property.getDatabase();
+        username = property.getUsername();
+        password = property.getPassword();
 
         String url = "jdbc:mysql://" + host + "/" + database;
 
