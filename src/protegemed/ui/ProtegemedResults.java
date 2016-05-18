@@ -32,7 +32,6 @@ public class ProtegemedResults extends javax.swing.JDialog {
 
     public ProtegemedResults(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
-        setTitle("Resultados");
         initComponents();
     }
 
@@ -42,8 +41,6 @@ public class ProtegemedResults extends javax.swing.JDialog {
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         int width = gd.getDisplayMode().getWidth();
         int height = gd.getDisplayMode().getHeight();
-        
-        System.out.println(width + " - " + height);
         
         setMinimumSize(new Dimension(width - 100, height / 2));
         setMaximumSize(new Dimension(width - 100, height / 2));
