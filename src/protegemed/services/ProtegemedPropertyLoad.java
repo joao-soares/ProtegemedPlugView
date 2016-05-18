@@ -20,7 +20,7 @@ public class ProtegemedPropertyLoad {
     private final String database;
     private final String username;
     private final String password;
-    private final Integer maxTime;
+    private final Long maxTime;
     
     public ProtegemedPropertyLoad(String propertyFile){
         Properties prop = new Properties();
@@ -30,7 +30,7 @@ public class ProtegemedPropertyLoad {
         String vDatabase;
         String vUsername;
         String vPassword;
-        Integer vMaxTime;
+        Long vMaxTime;
         
         try {
             input = new FileInputStream(propertyFile);
@@ -40,7 +40,7 @@ public class ProtegemedPropertyLoad {
             vDatabase = prop.getProperty("database");
             vUsername = prop.getProperty("username");
             vPassword = prop.getProperty("password");
-            vMaxTime = Integer.parseInt(prop.getProperty("maxTime"));
+            vMaxTime = Long.parseLong(prop.getProperty("maxTime"));
 
         } catch (IOException e) {
             System.out.println(e);
@@ -50,7 +50,7 @@ public class ProtegemedPropertyLoad {
             vDatabase = "protegemed";
             vUsername = "root";
             vPassword = "senha.123";
-            vMaxTime = 30;
+            vMaxTime = 1800000L;
         }
         
         this.host = vHost;
@@ -77,7 +77,7 @@ public class ProtegemedPropertyLoad {
         return password;
     }
 
-    public Integer getMaxTime() {
+    public Long getMaxTime() {
         return maxTime;
     }
    

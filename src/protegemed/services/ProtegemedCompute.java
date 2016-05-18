@@ -27,12 +27,17 @@ public class ProtegemedCompute implements ProtegemedConstants {
     private List<String> plugs;
     private String startDate;
     private String endDate;
+    private Long maxTime;
     Map<Integer, Long> concurrentUsages = new HashMap<>();
 
     public ProtegemedCompute(List<String> plugs, String startDate, String endDate) {
         this.plugs = plugs;
         this.startDate = startDate;
         this.endDate = endDate;
+        
+        ProtegemedPropertyLoad property = new ProtegemedPropertyLoad("resources/config.properties");
+        this.maxTime = property.getMaxTime();
+        
     }
 
     public Map<Integer, Map<String, String>> executeSearch() throws SQLException {
@@ -152,26 +157,36 @@ public class ProtegemedCompute implements ProtegemedConstants {
                         }
 
                     } else if (plugEvents.get(plugCode).containsKey(PLUG_ON)) {
+                        
+                        long thisUsedTime = (actualDate.getTime() - plugEvents.get(plugCode).get(PLUG_ON).getTime());
+                        
+                        if(thisUsedTime < getMaxTime()){
+                            
+                            Integer uses = plugUses.containsKey(plugCode) ? plugUses.get(plugCode) : 0;
+                            uses += 1;
+                            plugUses.put(plugCode, uses);
+                            
+                            long usedTime = plugUsedTime.containsKey(plugCode) ? plugUsedTime.get(plugCode) : 0;
+                            usedTime += thisUsedTime;
+                            plugUsedTime.put(plugCode, usedTime);
+                            
+                            long avgUsedTime;
+                            avgUsedTime = usedTime / uses;
+                            plugAvgUsedTime.put(plugCode, avgUsedTime);
+                            
+                            //TODO Count excedeed time discard as an use?
+                            if (simultaneousEvents.containsKey(plugCapture.get(plugCode))) {
 
-                        long usedTime = plugUsedTime.containsKey(plugCode) ? plugUsedTime.get(plugCode) : 0;
-                        long avgUsedTime;
+                                Integer usesSimultaneous = plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode) : 0;
+                                usesSimultaneous += 1;
+                                plugUsesSimultaneous.put(plugCode, usesSimultaneous);
 
-                        Integer uses = plugUses.containsKey(plugCode) ? plugUses.get(plugCode) : 0;
-                        uses += 1;
-                        plugUses.put(plugCode, uses);
-
-                        usedTime += (actualDate.getTime() - plugEvents.get(plugCode).get(PLUG_ON).getTime());
-                        plugUsedTime.put(plugCode, usedTime);
-
-                        avgUsedTime = usedTime / uses;
-                        plugAvgUsedTime.put(plugCode, avgUsedTime);
-
-                        if (simultaneousEvents.containsKey(plugCapture.get(plugCode))) {
-
-                            Integer usesSimultaneous = plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode) : 0;
-                            usesSimultaneous += 1;
-                            plugUsesSimultaneous.put(plugCode, usesSimultaneous);
-
+                            }
+                            
+                        } else {
+                            
+                            
+                            
                         }
 
                     }
@@ -391,24 +406,16 @@ public class ProtegemedCompute implements ProtegemedConstants {
         return plugs;
     }
 
-    public void setPlugs(List<String> plugs) {
-        this.plugs = plugs;
-    }
-
     public String getStartDate() {
         return startDate;
-    }
-
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
     }
 
     public String getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
+    public Long getMaxTime() {
+        return maxTime;
     }
     
     public Map<Integer, Long> getConcurrentUsages() {
