@@ -10,6 +10,9 @@ import java.util.Map.Entry;
 
 import javax.swing.table.DefaultTableModel;
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import javax.swing.table.TableColumnModel;
 
 /**
  *
@@ -35,9 +38,17 @@ public class ProtegemedResults extends javax.swing.JDialog {
 
     public ProtegemedResults(java.awt.Frame parent, boolean modal, Map<Integer, Map<String, String>> tableData) {
         super(parent, modal);
-        setMinimumSize(new Dimension(850, 250));
-        setMaximumSize(new Dimension(850, 250));
-        setSize(new Dimension(850, 250));
+        
+        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        int width = gd.getDisplayMode().getWidth();
+        int height = gd.getDisplayMode().getHeight();
+        
+        System.out.println(width + " - " + height);
+        
+        setMinimumSize(new Dimension(width - 100, height / 2));
+        setMaximumSize(new Dimension(width - 100, height / 2));
+        setSize(new Dimension(width - 100, height / 2));
+        setLocation(50, 100);
         setModal(true);
         setResizable(false);
         setTitle("Resultados");
@@ -75,7 +86,7 @@ public class ProtegemedResults extends javax.swing.JDialog {
         jPanelResults.setLayout(jPanelResultsLayout);
         jPanelResultsLayout.setHorizontalGroup(
             jPanelResultsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPaneResults, javax.swing.GroupLayout.DEFAULT_SIZE, 626, Short.MAX_VALUE)
+            .addComponent(jScrollPaneResults, javax.swing.GroupLayout.DEFAULT_SIZE, 847, Short.MAX_VALUE)
         );
         jPanelResultsLayout.setVerticalGroup(
             jPanelResultsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -156,20 +167,35 @@ public class ProtegemedResults extends javax.swing.JDialog {
 
     private void fillTable(Map<Integer, Map<String, String>> tableData) {
         DefaultTableModel model = (DefaultTableModel) jTableResults.getModel();
+        
         model.setRowCount(0);
         model.setColumnCount(0);
-        Object[] columnNames = {"Tomada", "Usos", "Simultaneos", "Concorrentes", "Tempo de uso", "Tempo m\u00E9dio", "\"Liga\" descartados", "Erro de simultaneidade", "\"Desliga\" descartados", "Erro de simultaneidade"};
+        Object[] columnNames = {"Tomada", "Usos", "Simultaneos", "Concorrentes", "Tempo de uso", "Tempo m\u00E9dio", "Descartados tempo maximo", "\"Liga\" descartados", "Erro de simultaneidade", "\"Desliga\" descartados", "Erro de simultaneidade"};
         model.setColumnIdentifiers(columnNames);
 
         for (Entry<Integer, Map<String, String>> entry : tableData.entrySet()) {
 
             Map<String, String> vLine = entry.getValue();
 
-            Object[] line = {entry.getKey(), vLine.get("uses"), vLine.get("usesSimultaneous"), vLine.get("concurrentUsage"), vLine.get("usedTime"), vLine.get("avgUsedTime"), vLine.get("onError"), vLine.get("onErrorSimultaneous"), vLine.get("offError"), vLine.get("offErrorSimultaneous")};
+            Object[] line = {entry.getKey(), vLine.get("uses"), vLine.get("usesSimultaneous"), vLine.get("concurrentUsage"), vLine.get("usedTime"), vLine.get("avgUsedTime"), vLine.get("exceededTimeDiscarded"), vLine.get("onError"), vLine.get("onErrorSimultaneous"), vLine.get("offError"), vLine.get("offErrorSimultaneous")};
             model.addRow(line);
         }
 
         jTableResults.setModel(model);
-
+        
+        Integer totalWidth = jTableResults.getColumnModel().getTotalColumnWidth();
+        Integer headerCharacters = 0;
+        
+        for(Object columnName : columnNames){
+            String name = (String) columnName;
+            headerCharacters += name.length();
+        }
+        
+        for(Integer i = 0; i < columnNames.length; i++){
+            Integer columnHeader = ((String) columnNames[i]).length();
+            Integer columnWidth = ((columnHeader * 100 / headerCharacters) * totalWidth / 100);
+            jTableResults.getColumnModel().getColumn(i).setPreferredWidth(columnWidth);
+        }
+        
     }
 }

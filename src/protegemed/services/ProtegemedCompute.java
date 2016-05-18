@@ -100,6 +100,9 @@ public class ProtegemedCompute implements ProtegemedConstants {
                 //Map to store use number simultaneous for plugs
                 Map<Integer, Integer> plugUsesSimultaneous = new HashMap<>();
                 
+                //Map to store discarded events that exceeded maxTime
+                Map<Integer, Integer> plugExceededMaxTime = new HashMap<>();
+                
                 //Map to store average use time for plugs
                 Map<Integer, Long> plugAvgUsedTime = new HashMap<>();
 
@@ -185,7 +188,9 @@ public class ProtegemedCompute implements ProtegemedConstants {
                             
                         } else {
                             
-                            
+                            Integer exceededMaxTime = plugExceededMaxTime.containsKey(plugCode) ? plugExceededMaxTime.get(plugCode) : 0;
+                            exceededMaxTime += 1;
+                            plugExceededMaxTime.put(plugCode, exceededMaxTime);
                             
                         }
 
@@ -196,15 +201,16 @@ public class ProtegemedCompute implements ProtegemedConstants {
                     plugCapture.put(plugCode, captureCode);
 
                     Map<String, String> tableValues = new HashMap<>();
+                    tableValues.put("uses", plugUses.containsKey(plugCode) ? plugUses.get(plugCode).toString() : "0");
+                    tableValues.put("usesSimultaneous", plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode).toString() : "0");
+                    tableValues.put("concurrentUsage", getConcurrentUsages().containsKey(plugCode) ? msToString(getConcurrentUsages().get(plugCode)) : "00:00");
                     tableValues.put("usedTime", plugUsedTime.containsKey(plugCode) ? msToString(plugUsedTime.get(plugCode)) : "00:00");
+                    tableValues.put("avgUsedTime", plugAvgUsedTime.containsKey(plugCode) ? msToString(plugAvgUsedTime.get(plugCode)) : "00:00");
+                    tableValues.put("exceededTimeDiscarded", plugExceededMaxTime.containsKey(plugCode) ? plugExceededMaxTime.get(plugCode).toString() : "0");
                     tableValues.put("onError", plugOnError.containsKey(plugCode) ? plugOnError.get(plugCode).toString() : "0");
                     tableValues.put("onErrorSimultaneous", plugOnErrorSimultaneous.containsKey(plugCode) ? plugOnErrorSimultaneous.get(plugCode).toString() : "0");
                     tableValues.put("offError", plugOffError.containsKey(plugCode) ? plugOffError.get(plugCode).toString() : "0");
                     tableValues.put("offErrorSimultaneous", plugOffErrorSimultaneous.containsKey(plugCode) ? plugOffErrorSimultaneous.get(plugCode).toString() : "0");
-                    tableValues.put("uses", plugUses.containsKey(plugCode) ? plugUses.get(plugCode).toString() : "0");
-                    tableValues.put("usesSimultaneous", plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode).toString() : "0");
-                    tableValues.put("avgUsedTime", plugAvgUsedTime.containsKey(plugCode) ? msToString(plugAvgUsedTime.get(plugCode)) : "00:00");
-                    tableValues.put("concurrentUsage", getConcurrentUsages().containsKey(plugCode) ? msToString(getConcurrentUsages().get(plugCode)) : "00:00");
                     result.put(plugCode, tableValues);
 
                 }
