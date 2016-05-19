@@ -206,7 +206,6 @@ public class ProtegemedCompute implements ProtegemedConstants {
                                 Integer usesSimultaneous = plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode) : 0;
                                 usesSimultaneous += 1;
                                 plugUsesSimultaneous.put(plugCode, usesSimultaneous);
-                                System.out.println(plugCode + " - " + captureCode + " - " + plugCapture.get(plugCode));
 
                             }
                             
