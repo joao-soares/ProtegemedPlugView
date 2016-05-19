@@ -28,7 +28,8 @@ public class ProtegemedCompute implements ProtegemedConstants {
     private String startDate;
     private String endDate;
     private Long maxTime;
-    Map<Integer, Long> concurrentUsages = new HashMap<>();
+    Map<Integer, Long> concurrentUsageTime = new HashMap<>();
+    Map<Integer, Integer> concurrentUsages = new HashMap<>();
 
     public ProtegemedCompute(List<String> plugs, String startDate, String endDate) {
         this.plugs = plugs;
@@ -203,7 +204,8 @@ public class ProtegemedCompute implements ProtegemedConstants {
                     Map<String, String> tableValues = new HashMap<>();
                     tableValues.put("uses", plugUses.containsKey(plugCode) ? plugUses.get(plugCode).toString() : "0");
                     tableValues.put("usesSimultaneous", plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode).toString() : "0");
-                    tableValues.put("concurrentUsage", getConcurrentUsages().containsKey(plugCode) ? msToString(getConcurrentUsages().get(plugCode)) : "00:00");
+                    tableValues.put("concurrentUsages", getConcurrentUsages().containsKey(plugCode) ? getConcurrentUsages().get(plugCode).toString() : "0");
+                    tableValues.put("concurrentUsageTime", getConcurrentUsageTime().containsKey(plugCode) ? msToString(getConcurrentUsageTime().get(plugCode)) : "00:00");
                     tableValues.put("usedTime", plugUsedTime.containsKey(plugCode) ? msToString(plugUsedTime.get(plugCode)) : "00:00");
                     tableValues.put("avgUsedTime", plugAvgUsedTime.containsKey(plugCode) ? msToString(plugAvgUsedTime.get(plugCode)) : "00:00");
                     tableValues.put("exceededTimeDiscarded", plugExceededMaxTime.containsKey(plugCode) ? plugExceededMaxTime.get(plugCode).toString() : "0");
@@ -351,15 +353,31 @@ public class ProtegemedCompute implements ProtegemedConstants {
                                     concurrentUsageTime.put(thisCaptureCode, interval < lastInterval ? interval : lastInterval);
                                 }
                             }
+
+                            long plugInterval = getConcurrentUsageTime().containsKey(thisPlugCode) ? getConcurrentUsageTime().get(thisPlugCode) : 0;
+                            long newInterval = concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
+                            plugInterval += newInterval;
+                            getConcurrentUsageTime().put(thisPlugCode, plugInterval);
                             
-                            long plugInterval = getConcurrentUsages().containsKey(thisPlugCode) ? getConcurrentUsages().get(thisPlugCode) : 0;
-                            plugInterval += concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
-                            getConcurrentUsages().put(thisPlugCode, plugInterval);
+                            Integer localConcurrentUsages = getConcurrentUsages().containsKey(thisPlugCode) ? getConcurrentUsages().get(thisPlugCode) : 0;
+                            if(newInterval > 0){
+                                localConcurrentUsages += 1;
+                                getConcurrentUsages().put(thisPlugCode, localConcurrentUsages);
+                            }
+                            
+                            System.out.println(thisPlugCode + " - " + concurrentPlug);
                             
                             for(Entry<Integer, Integer> concurrentEntry : concurrentPlug.entrySet()){
-                                long otherPlugInterval = getConcurrentUsages().containsKey(concurrentEntry.getKey()) ? getConcurrentUsages().get(concurrentEntry.getKey()) : 0;
-                                otherPlugInterval += concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
-                                getConcurrentUsages().put(concurrentEntry.getKey(), otherPlugInterval);
+                                long otherPlugInterval = getConcurrentUsageTime().containsKey(concurrentEntry.getKey()) ? getConcurrentUsageTime().get(concurrentEntry.getKey()) : 0;
+                                newInterval = concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
+                                otherPlugInterval += newInterval;
+                                getConcurrentUsageTime().put(concurrentEntry.getKey(), otherPlugInterval);
+                                
+                                if(newInterval > 0){
+                                    localConcurrentUsages = getConcurrentUsages().containsKey(concurrentEntry.getKey()) ? getConcurrentUsages().get(concurrentEntry.getKey()) : 0;
+                                    localConcurrentUsages += 1;
+                                    getConcurrentUsages().put(concurrentEntry.getKey(), localConcurrentUsages);
+                                }
                             }
                         }
                     }
@@ -424,11 +442,19 @@ public class ProtegemedCompute implements ProtegemedConstants {
         return maxTime;
     }
     
-    public Map<Integer, Long> getConcurrentUsages() {
+    public Map<Integer, Long> getConcurrentUsageTime() {
+        return concurrentUsageTime;
+    }
+
+    public void setConcurrentUsageTime(Map<Integer, Long> concurrentUsageTime) {
+        this.concurrentUsageTime = concurrentUsageTime;
+    }
+
+    public Map<Integer, Integer> getConcurrentUsages() {
         return concurrentUsages;
     }
 
-    public void setConcurrentUsages(Map<Integer, Long> concurrentUsages) {
+    public void setConcurrentUsages(Map<Integer, Integer> concurrentUsages) {
         this.concurrentUsages = concurrentUsages;
     }
 
