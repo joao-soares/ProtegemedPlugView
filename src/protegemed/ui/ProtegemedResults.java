@@ -167,14 +167,14 @@ public class ProtegemedResults extends javax.swing.JDialog {
         
         model.setRowCount(0);
         model.setColumnCount(0);
-        Object[] columnNames = {"Tomada", "Usos", "Simultaneos", "Concorrentes", "Concorrencias", "Tempo concorrencia", "Tempo uso", "Tempo m\u00E9dio", "Desc. tempo excedido", "\"Liga\" desc.", "\"Liga\" desc. simult.", "\"Desliga\" desc.", "\"Desliga\" desc. simult."};
+        Object[] columnNames = {"Tom.", "Usos", "Simult.", "Concorrentes", "Concorrencias", "Tempo concor.", "Tempo uso", "Tempo m\u00E9dio", "Menor uso", "Maior uso", "Tempo excedido", "\"Liga\" desc.", "\"Liga\" desc. simult.", "\"Desliga\" desc.", "\"Desliga\" desc. simult."};
         model.setColumnIdentifiers(columnNames);
 
         for (Entry<Integer, Map<String, String>> entry : tableData.entrySet()) {
 
             Map<String, String> vLine = entry.getValue();
 
-            Object[] line = {entry.getKey(), vLine.get("uses"), vLine.get("usesSimultaneous"), vLine.get("concurrentUses"), vLine.get("concurrences"), vLine.get("concurrentUsageTime"), vLine.get("usedTime"), vLine.get("avgUsedTime"), vLine.get("exceededTimeDiscarded"), vLine.get("onError"), vLine.get("onErrorSimultaneous"), vLine.get("offError"), vLine.get("offErrorSimultaneous")};
+            Object[] line = {entry.getKey(), vLine.get("uses"), vLine.get("usesSimultaneous"), vLine.get("concurrentUses"), vLine.get("concurrences"), vLine.get("concurrentUsageTime"), vLine.get("usedTime"), vLine.get("avgUsedTime"), vLine.get("minUsageTime"), vLine.get("maxUsageTime"), vLine.get("exceededTimeDiscarded"), vLine.get("onError"), vLine.get("onErrorSimultaneous"), vLine.get("offError"), vLine.get("offErrorSimultaneous")};
             model.addRow(line);
         }
 

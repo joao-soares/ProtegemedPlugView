@@ -107,6 +107,9 @@ public class ProtegemedCompute implements ProtegemedConstants {
                 
                 //Map to store average use time for plugs
                 Map<Integer, Long> plugAvgUsedTime = new HashMap<>();
+                
+                Map<Integer, Long> minUsageTime = new HashMap<>();
+                Map<Integer, Long> maxUsageTime = new HashMap<>();
 
                 while (rs.next()) {
 
@@ -167,6 +170,10 @@ public class ProtegemedCompute implements ProtegemedConstants {
                         
                         if(thisUsedTime < getMaxTime()){
                             
+                            if(thisUsedTime == 0){
+                                thisUsedTime = 1000;
+                            }
+                            
                             Integer uses = plugUses.containsKey(plugCode) ? plugUses.get(plugCode) : 0;
                             uses += 1;
                             plugUses.put(plugCode, uses);
@@ -179,12 +186,27 @@ public class ProtegemedCompute implements ProtegemedConstants {
                             avgUsedTime = usedTime / uses;
                             plugAvgUsedTime.put(plugCode, avgUsedTime);
                             
-                            //TODO Count excedeed time discard as an use?
+                            long minUsage = minUsageTime.containsKey(plugCode) ? minUsageTime.get(plugCode) : -1;
+                            long maxUsage = maxUsageTime.containsKey(plugCode) ? maxUsageTime.get(plugCode) : 0;
+                            
+                            if(minUsage == -1){
+                                minUsage = thisUsedTime;
+                            }
+                            
+                            if(thisUsedTime <= minUsage){
+                                minUsageTime.put(plugCode, thisUsedTime);
+                            }
+                            
+                            if(thisUsedTime > maxUsage){
+                                maxUsageTime.put(plugCode, thisUsedTime);
+                            }
+                            
                             if (simultaneousEvents.containsKey(plugCapture.get(plugCode))) {
 
                                 Integer usesSimultaneous = plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode) : 0;
                                 usesSimultaneous += 1;
                                 plugUsesSimultaneous.put(plugCode, usesSimultaneous);
+                                System.out.println(plugCode + " - " + captureCode + " - " + plugCapture.get(plugCode));
 
                             }
                             
@@ -210,6 +232,8 @@ public class ProtegemedCompute implements ProtegemedConstants {
                     tableValues.put("concurrentUsageTime", getConcurrentUsageTime().containsKey(plugCode) ? msToString(getConcurrentUsageTime().get(plugCode)) : "00:00");
                     tableValues.put("usedTime", plugUsedTime.containsKey(plugCode) ? msToString(plugUsedTime.get(plugCode)) : "00:00");
                     tableValues.put("avgUsedTime", plugAvgUsedTime.containsKey(plugCode) ? msToString(plugAvgUsedTime.get(plugCode)) : "00:00");
+                    tableValues.put("minUsageTime", minUsageTime.containsKey(plugCode) ? msToString(minUsageTime.get(plugCode)) : "00:00");
+                    tableValues.put("maxUsageTime", maxUsageTime.containsKey(plugCode) ? msToString(maxUsageTime.get(plugCode)) : "00:00");
                     tableValues.put("exceededTimeDiscarded", plugExceededMaxTime.containsKey(plugCode) ? plugExceededMaxTime.get(plugCode).toString() : "0");
                     tableValues.put("onError", plugOnError.containsKey(plugCode) ? plugOnError.get(plugCode).toString() : "0");
                     tableValues.put("onErrorSimultaneous", plugOnErrorSimultaneous.containsKey(plugCode) ? plugOnErrorSimultaneous.get(plugCode).toString() : "0");
@@ -265,6 +289,8 @@ public class ProtegemedCompute implements ProtegemedConstants {
         ps.setString(2, endDate);
 
         ResultSet rs = ps.executeQuery();
+        
+        Map<Integer, Integer> sameSimultaneous = new HashMap<>();
 
         while (rs.next()) {
 
@@ -296,9 +322,10 @@ public class ProtegemedCompute implements ProtegemedConstants {
 
         for (Entry<Timestamp, List<Integer>> entry : captureDates.entrySet()) {
             
-            hasSimultaneous = true;
+            hasSimultaneous = false;
 
             List<Integer> capturesOnDate = entry.getValue();
+            List<Integer> auxCapturesOnDate = entry.getValue();
 
             if (!(capturesOnDate.size() > 1)) {
                 hasSimultaneous = false;
@@ -314,6 +341,18 @@ public class ProtegemedCompute implements ProtegemedConstants {
                 thisCaptureCode = capture;
                 thisPlugCode = captureEvents.get(thisCaptureCode).firstKey();
                 thisEventCode = captureEvents.get(thisCaptureCode).get(thisPlugCode);
+                
+                for(Integer auxCapture : auxCapturesOnDate){
+                    if(!Objects.equals(auxCapture, capture)){
+                        Integer auxPlugCode = captureEvents.get(auxCapture).firstKey();
+                        Integer auxEventCode = captureEvents.get(auxCapture).get(auxPlugCode);
+                        
+                        if(Objects.equals(thisEventCode, auxEventCode)){
+                            hasSimultaneous = true;
+                        }
+
+                    }
+                }
                 
                 nextCaptureCode = nextCapture.get(capture);
                 if (nextCaptureCode != null) {
