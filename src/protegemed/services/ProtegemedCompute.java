@@ -24,12 +24,13 @@ import java.util.TreeMap;
  */
 public class ProtegemedCompute implements ProtegemedConstants {
 
-    private List<String> plugs;
-    private String startDate;
-    private String endDate;
-    private Long maxTime;
+    private final List<String> plugs;
+    private final String startDate;
+    private final String endDate;
+    private final Long maxTime;
     Map<Integer, Long> concurrentUsageTime = new HashMap<>();
-    Map<Integer, Integer> concurrentUsages = new HashMap<>();
+    Map<Integer, Integer> concurrences = new HashMap<>();
+    Map<Integer, Integer> concurrentUses = new HashMap<>();
 
     public ProtegemedCompute(List<String> plugs, String startDate, String endDate) {
         this.plugs = plugs;
@@ -204,7 +205,8 @@ public class ProtegemedCompute implements ProtegemedConstants {
                     Map<String, String> tableValues = new HashMap<>();
                     tableValues.put("uses", plugUses.containsKey(plugCode) ? plugUses.get(plugCode).toString() : "0");
                     tableValues.put("usesSimultaneous", plugUsesSimultaneous.containsKey(plugCode) ? plugUsesSimultaneous.get(plugCode).toString() : "0");
-                    tableValues.put("concurrentUsages", getConcurrentUsages().containsKey(plugCode) ? getConcurrentUsages().get(plugCode).toString() : "0");
+                    tableValues.put("concurrentUses", getConcurrentUses().containsKey(plugCode) ? getConcurrentUses().get(plugCode).toString() : "0");
+                    tableValues.put("concurrences", getConcurrences().containsKey(plugCode) ? getConcurrences().get(plugCode).toString() : "0");
                     tableValues.put("concurrentUsageTime", getConcurrentUsageTime().containsKey(plugCode) ? msToString(getConcurrentUsageTime().get(plugCode)) : "00:00");
                     tableValues.put("usedTime", plugUsedTime.containsKey(plugCode) ? msToString(plugUsedTime.get(plugCode)) : "00:00");
                     tableValues.put("avgUsedTime", plugAvgUsedTime.containsKey(plugCode) ? msToString(plugAvgUsedTime.get(plugCode)) : "00:00");
@@ -247,7 +249,7 @@ public class ProtegemedCompute implements ProtegemedConstants {
         Map<Timestamp, List<Integer>> captureDates = new TreeMap<>();
         Map<Integer, TreeMap<Integer, Integer>> captureEvents = new TreeMap<>();
         Map<Integer, Timestamp> simpleCaptureTime = new HashMap<>();
-        Map<Integer, Long> concurrentUsageTime = new HashMap<>();
+        Map<Integer, Long> localConcurrentUsageTime = new HashMap<>();
 
         Integer captureCode, plugCode, eventCode;
         Timestamp actualDate;
@@ -290,6 +292,7 @@ public class ProtegemedCompute implements ProtegemedConstants {
         
         Boolean hasSimultaneous;
         lastPlugCapture.clear();
+        Map<Integer, Integer> concurrentPlugs = new HashMap<>();
 
         for (Entry<Timestamp, List<Integer>> entry : captureDates.entrySet()) {
             
@@ -344,39 +347,39 @@ public class ProtegemedCompute implements ProtegemedConstants {
                                     Timestamp effectiveEndDate = thisEndDate.after(nextEndDate) ? nextEndDate : thisEndDate;
                                     
                                     long interval = effectiveEndDate.getTime() - thisStartDate.getTime();
-                                    long lastInterval = concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : interval;
+                                    long lastInterval = localConcurrentUsageTime.containsKey(thisCaptureCode) ? localConcurrentUsageTime.get(thisCaptureCode) : interval;
                                     
                                     if(interval <= lastInterval){
                                         concurrentPlug.put(entryPlugCode, entryCaptureCode);
                                     } 
 
-                                    concurrentUsageTime.put(thisCaptureCode, interval < lastInterval ? interval : lastInterval);
+                                    localConcurrentUsageTime.put(thisCaptureCode, interval < lastInterval ? interval : lastInterval);
                                 }
                             }
 
                             long plugInterval = getConcurrentUsageTime().containsKey(thisPlugCode) ? getConcurrentUsageTime().get(thisPlugCode) : 0;
-                            long newInterval = concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
+                            long newInterval = localConcurrentUsageTime.containsKey(thisCaptureCode) ? localConcurrentUsageTime.get(thisCaptureCode) : 0;
                             plugInterval += newInterval;
                             getConcurrentUsageTime().put(thisPlugCode, plugInterval);
                             
-                            Integer localConcurrentUsages = getConcurrentUsages().containsKey(thisPlugCode) ? getConcurrentUsages().get(thisPlugCode) : 0;
+                            Integer localConcurrentUsages = getConcurrences().containsKey(thisPlugCode) ? getConcurrences().get(thisPlugCode) : 0;
                             if(newInterval > 0){
                                 localConcurrentUsages += 1;
-                                getConcurrentUsages().put(thisPlugCode, localConcurrentUsages);
+                                getConcurrences().put(thisPlugCode, localConcurrentUsages);
+                                concurrentPlugs.put(thisCaptureCode, thisPlugCode);
                             }
-                            
-                            System.out.println(thisPlugCode + " - " + concurrentPlug);
                             
                             for(Entry<Integer, Integer> concurrentEntry : concurrentPlug.entrySet()){
                                 long otherPlugInterval = getConcurrentUsageTime().containsKey(concurrentEntry.getKey()) ? getConcurrentUsageTime().get(concurrentEntry.getKey()) : 0;
-                                newInterval = concurrentUsageTime.containsKey(thisCaptureCode) ? concurrentUsageTime.get(thisCaptureCode) : 0;
+                                newInterval = localConcurrentUsageTime.containsKey(thisCaptureCode) ? localConcurrentUsageTime.get(thisCaptureCode) : 0;
                                 otherPlugInterval += newInterval;
                                 getConcurrentUsageTime().put(concurrentEntry.getKey(), otherPlugInterval);
                                 
                                 if(newInterval > 0){
-                                    localConcurrentUsages = getConcurrentUsages().containsKey(concurrentEntry.getKey()) ? getConcurrentUsages().get(concurrentEntry.getKey()) : 0;
+                                    localConcurrentUsages = getConcurrences().containsKey(concurrentEntry.getKey()) ? getConcurrences().get(concurrentEntry.getKey()) : 0;
                                     localConcurrentUsages += 1;
-                                    getConcurrentUsages().put(concurrentEntry.getKey(), localConcurrentUsages);
+                                    getConcurrences().put(concurrentEntry.getKey(), localConcurrentUsages);
+                                    concurrentPlugs.put(concurrentEntry.getValue(), concurrentEntry.getKey());
                                 }
                             }
                         }
@@ -396,6 +399,12 @@ public class ProtegemedCompute implements ProtegemedConstants {
 
             }
 
+        }
+        
+        for(Entry<Integer, Integer> concurrentEntry : concurrentPlugs.entrySet()){
+            Integer concurrences = getConcurrentUses().containsKey(concurrentEntry.getValue()) ? getConcurrentUses().get(concurrentEntry.getValue()) : 0;
+            concurrences += 1;
+            getConcurrentUses().put(concurrentEntry.getValue(), concurrences);
         }
 
         return simultaneousEvents;
@@ -450,12 +459,20 @@ public class ProtegemedCompute implements ProtegemedConstants {
         this.concurrentUsageTime = concurrentUsageTime;
     }
 
-    public Map<Integer, Integer> getConcurrentUsages() {
-        return concurrentUsages;
+    public Map<Integer, Integer> getConcurrences() {
+        return concurrences;
     }
 
-    public void setConcurrentUsages(Map<Integer, Integer> concurrentUsages) {
-        this.concurrentUsages = concurrentUsages;
+    public void setConcurrences(Map<Integer, Integer> concurrences) {
+        this.concurrences = concurrences;
+    }
+
+    public Map<Integer, Integer> getConcurrentUses() {
+        return concurrentUses;
+    }
+
+    public void setConcurrentUses(Map<Integer, Integer> concurrentUses) {
+        this.concurrentUses = concurrentUses;
     }
 
 }
